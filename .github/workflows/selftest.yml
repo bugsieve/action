@@ -1,0 +1,17 @@
+name: selftest
+on: [push, workflow_dispatch]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck scan.sh
+      - id: bugsieve
+        uses: ./
+        with:
+          server: ${{ vars.BUGSIEVE_SERVER }}
+          token: ${{ secrets.BUGSIEVE_TOKEN }}
+          repository: https://github.com/OWASP/NodeGoat
+          ref: ''
+          fail-on: none
+      - run: test -n "${{ steps.bugsieve.outputs.status }}"

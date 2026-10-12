@@ -1,0 +1,44 @@
+name: Bugsieve scan
+description: Scan the pushed branch with Bugsieve and fail on flaws attackers are exploiting.
+branding:
+  icon: shield
+  color: green
+inputs:
+  server:
+    description: Bugsieve address, for example https://bugsieve.example.com
+    required: true
+  token:
+    description: API token from your Bugsieve profile. Store it as a secret.
+    required: false
+  repository:
+    description: Repository link to scan. Pull requests from forks scan the fork.
+    default: ${{ github.event.pull_request.head.repo.html_url || format('{0}/{1}', github.server_url, github.repository) }}
+  ref:
+    description: Branch to scan.
+    default: ${{ github.head_ref || github.ref_name }}
+  fail-on:
+    description: none, exploited, critical, high or medium
+    default: exploited
+  timeout-minutes:
+    description: How long to wait for the result.
+    default: '20'
+outputs:
+  scan-id: { description: Bugsieve scan id, value: '${{ steps.scan.outputs.scan-id }}' }
+  status: { description: completed, failed, skipped or timeout, value: '${{ steps.scan.outputs.status }}' }
+  critical: { description: Open critical findings, value: '${{ steps.scan.outputs.critical }}' }
+  high: { description: Open high findings, value: '${{ steps.scan.outputs.high }}' }
+  exploited: { description: Open findings known to be exploited, value: '${{ steps.scan.outputs.exploited }}' }
+  report-url: { description: Link to the full report, value: '${{ steps.scan.outputs.report-url }}' }
+runs:
+  using: composite
+  steps:
+    - id: scan
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/scan.sh"'
+      env:
+        BUGSIEVE_SERVER: ${{ inputs.server }}
+        BUGSIEVE_TOKEN: ${{ inputs.token }}
+        BUGSIEVE_REPOSITORY: ${{ inputs.repository }}
+        BUGSIEVE_REF: ${{ inputs.ref }}
+        BUGSIEVE_FAIL_ON: ${{ inputs.fail-on }}
+        BUGSIEVE_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
