@@ -3,7 +3,7 @@
 Scan the pushed branch with Bugsieve and fail the build when it has flaws attackers are exploiting right now (CISA KEV).
 
 ```yaml
-- uses: bugsieve/scan-action@v1
+- uses: bugsieve/action@v1
   with:
     server: https://bugsieve.example.com
     token: ${{ secrets.BUGSIEVE_TOKEN }}
