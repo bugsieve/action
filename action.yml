@@ -5,8 +5,8 @@ branding:
   color: green
 inputs:
   server:
-    description: Bugsieve address, for example https://bugsieve.example.com
-    required: true
+    description: Bugsieve address. Only change it if you run your own.
+    default: https://bugsieve.com
   token:
     description: API token from your Bugsieve profile. Store it as a secret.
     required: false
@@ -19,6 +19,9 @@ inputs:
   fail-on:
     description: none, exploited, critical, high or medium
     default: exploited
+  strict:
+    description: Fail the build when Bugsieve itself cannot be reached or answers with an error. By default the step warns and passes, so an outage on our side never blocks your pipeline.
+    default: 'false'
   timeout-minutes:
     description: How long to wait for the result.
     default: '20'
@@ -42,3 +45,4 @@ runs:
         BUGSIEVE_REF: ${{ inputs.ref }}
         BUGSIEVE_FAIL_ON: ${{ inputs.fail-on }}
         BUGSIEVE_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        BUGSIEVE_STRICT: ${{ inputs.strict }}

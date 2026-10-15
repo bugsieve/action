@@ -5,7 +5,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: shellcheck scan.sh
+      - run: shellcheck scan.sh test/run.sh
+      - run: ./test/run.sh
       - id: bugsieve
         uses: ./
         with:

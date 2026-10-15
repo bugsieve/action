@@ -13,19 +13,35 @@ if [[ -z "${BUGSIEVE_TOKEN:-}" ]]; then
 fi
 echo "::add-mask::$BUGSIEVE_TOKEN"
 
+# Bugsieve being down (a 5xx, a timeout, no connection) must not break your build unless you ask for strict mode.
+unavailable() {
+  if [[ "${BUGSIEVE_STRICT:-false}" == true ]]; then
+    echo "::error::$1"; exit 1
+  fi
+  echo "::warning::$1 The build is not failed for this."; out status skipped; exit 0
+}
+
+# Prints the body, then the HTTP status on its own line. A connection failure prints status 000 instead of ending the script.
 api() {
-  curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $BUGSIEVE_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' "$@"
+  curl -sS --connect-timeout 15 --max-time 60 -w '\n%{http_code}' -H "Authorization: Bearer $BUGSIEVE_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' "$@" 2>/dev/null || printf '\n000'
 }
 
 body=$(jq -n --arg url "$BUGSIEVE_REPOSITORY" --arg ref "$BUGSIEVE_REF" '{url: $url, ref: (if $ref == "" then null else $ref end)}')
 response=$(api -X POST "${BUGSIEVE_SERVER%/}/api/v1/scans" -d "$body")
 code=$(tail -n1 <<<"$response"); json=$(sed '$d' <<<"$response")
 
+# A firewall in front of the server (Cloudflare, for example) answers a blocked request with an HTML page, not JSON.
+if [[ "$code" == 403 ]] && ! jq -e . >/dev/null 2>&1 <<<"$json"; then
+  unavailable "A firewall in front of ${BUGSIEVE_SERVER%/} blocked the request (HTTP 403 with a web page, not a Bugsieve answer)."
+fi
+
 case "$code" in
   202) ;;
   429) echo "::warning::Bugsieve did not start a scan: $(jq -r '.message' <<<"$json"). The build is not failed for this."; out status skipped; exit 0 ;;
   401|403) echo "::error::Bugsieve refused the token (HTTP $code). Create a new one on your Bugsieve profile."; exit 1 ;;
   422) echo "::error::$(jq -r '.errors.url[0] // .message' <<<"$json")"; exit 1 ;;
+  000) unavailable "Could not reach ${BUGSIEVE_SERVER%/}." ;;
+  5*) unavailable "Bugsieve answered HTTP $code." ;;
   *) echo "::error::Bugsieve answered HTTP $code."; exit 1 ;;
 esac
 
