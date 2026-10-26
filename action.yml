@@ -26,12 +26,24 @@ inputs:
     description: How long to wait for the result.
     default: '20'
 outputs:
-  scan-id: { description: Bugsieve scan id, value: '${{ steps.scan.outputs.scan-id }}' }
-  status: { description: completed, failed, skipped or timeout, value: '${{ steps.scan.outputs.status }}' }
-  critical: { description: Open critical findings, value: '${{ steps.scan.outputs.critical }}' }
-  high: { description: Open high findings, value: '${{ steps.scan.outputs.high }}' }
-  exploited: { description: Open findings known to be exploited, value: '${{ steps.scan.outputs.exploited }}' }
-  report-url: { description: Link to the full report, value: '${{ steps.scan.outputs.report-url }}' }
+  scan-id:
+    description: Bugsieve scan id
+    value: ${{ steps.scan.outputs.scan-id }}
+  status:
+    description: completed, failed, skipped or timeout
+    value: ${{ steps.scan.outputs.status }}
+  critical:
+    description: Open critical findings
+    value: ${{ steps.scan.outputs.critical }}
+  high:
+    description: Open high findings
+    value: ${{ steps.scan.outputs.high }}
+  exploited:
+    description: Open findings known to be exploited
+    value: ${{ steps.scan.outputs.exploited }}
+  report-url:
+    description: Link to the full report
+    value: ${{ steps.scan.outputs.report-url }}
 runs:
   using: composite
   steps:
