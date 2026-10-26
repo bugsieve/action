@@ -4,7 +4,7 @@ set -euo pipefail
 
 out() { echo "$1=$2" >> "${GITHUB_OUTPUT:-/dev/null}"; }
 summary() { echo "$1" >> "${GITHUB_STEP_SUMMARY:-/dev/stdout}"; }
-poll_seconds="${BUGSIEVE_POLL_SECONDS:-15}"
+poll_seconds="${BUGSIEVE_POLL_SECONDS:-5}"
 
 if [[ -z "${BUGSIEVE_TOKEN:-}" ]]; then
   echo "::notice::No Bugsieve token (secrets are not passed to pull requests from forks). Skipping the scan."
