@@ -22,8 +22,9 @@ unavailable() {
 }
 
 # Prints the body, then the HTTP status on its own line. A connection failure prints status 000 instead of ending the script.
+headers_file=$(mktemp)
 api() {
-  curl -sS --connect-timeout 15 --max-time 60 -w '\n%{http_code}' -H "Authorization: Bearer $BUGSIEVE_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' "$@" 2>/dev/null || printf '\n000'
+  curl -sS -D "$headers_file" --connect-timeout 15 --max-time 60 -w '\n%{http_code}' -H "Authorization: Bearer $BUGSIEVE_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' "$@" 2>/dev/null || printf '\n000'
 }
 
 body=$(jq -n --arg url "$BUGSIEVE_REPOSITORY" --arg ref "$BUGSIEVE_REF" '{url: $url, ref: (if $ref == "" then null else $ref end)}')
@@ -32,6 +33,7 @@ code=$(tail -n1 <<<"$response"); json=$(sed '$d' <<<"$response")
 
 # A firewall in front of the server (Cloudflare, for example) answers a blocked request with an HTML page, not JSON.
 if [[ "$code" == 403 ]] && ! jq -e . >/dev/null 2>&1 <<<"$json"; then
+  echo "::notice::Blocked by: $(grep -iE '^(server|cf-ray|cf-mitigated):' "$headers_file" | tr -d '\r' | tr '\n' ' ')| page: $(sed 's/<[^>]*>/ /g' <<<"$json" | tr -s ' \n' ' ' | cut -c1-160)"
   unavailable "A firewall in front of ${BUGSIEVE_SERVER%/} blocked the request (HTTP 403 with a web page, not a Bugsieve answer)."
 fi
 
